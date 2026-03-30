@@ -32,6 +32,7 @@ parser.add_argument("--use_cnn", action="store_true", default=None, help="Name o
 parser.add_argument("--arm_fixed", action="store_true", default=False, help="Fix the robot's arms.")
 parser.add_argument("--use_rnn", action="store_true", default=False, help="Use RNN in the actor-critic model.")
 parser.add_argument("--history_length", default=0, type=int, help="Length of history buffer.")
+parser.add_argument("--scene_id", type=str, default="2azQ1b91cZZ", help="Matterport scene ID to load.")
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
 # append AppLauncher cli args
@@ -57,7 +58,7 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 
 from omni.isaac.leggedloco.config import *
 from omni.isaac.lab.devices.keyboard import Se2Keyboard
-from omni.isaac.leggedloco.utils import RslRlVecEnvHistoryWrapper
+from omni.isaac.leggedloco.utils import RslRlVecEnvHistoryWrapper, ASSETS_DIR
 
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.markers import VisualizationMarkers, VisualizationMarkersCfg
@@ -84,6 +85,18 @@ def main():
     # parse configuration
     env_cfg = parse_env_cfg(args_cli.task, num_envs=args_cli.num_envs)
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli, play=True)
+
+    # If matterport task, set the USD scene path
+    if "matterport" in args_cli.task:
+        scene_id = args_cli.scene_id
+        usd_file = os.path.join(ASSETS_DIR, f"matterport_usd/{scene_id}/{scene_id}.usd")
+        if os.path.exists(usd_file):
+            env_cfg.scene.terrain.usd_path = usd_file
+            # Set a reasonable start position (center of the scene, slightly elevated)
+            env_cfg.scene.robot.init_state.pos = (0.0, 0.0, 0.5)
+            print(f"[INFO] Loading Matterport scene: {scene_id}")
+        else:
+            raise FileNotFoundError(f"USD file not found: {usd_file}")
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg)

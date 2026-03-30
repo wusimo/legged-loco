@@ -157,7 +157,10 @@ class Planner:
 
         while self.simulation_app.is_running(): # 20hz
             # Save depth image
-            rgb_image = infos['observations']['camera_obs'][0,:,:,:3].clone().detach()
+            camera_data = infos['observations']['camera_obs']
+            if isinstance(camera_data, dict):
+                camera_data = camera_data['camera_obs']
+            rgb_image = camera_data[0,:,:,:3].clone().detach()
             # save_path_rgb = os.path.join(os.getcwd(), "rgb_image"+str(it-start_it)+".png")
             rgb_image_np = rgb_image.cpu().numpy()
             rgb_image_np = cv2.rotate(rgb_image_np, cv2.ROTATE_90_CLOCKWISE)
@@ -285,11 +288,11 @@ if __name__ == "__main__":
         env_cfg.expert_time = np.arange(env_cfg.expert_path_length)*1.0
     # scene_id = "1LXtFkjw3qL"
 
-    udf_file = os.path.join(ASSETS_DIR, "matterport_usd/{env_cfg.scene_id}/{env_cfg.scene_id}.usd")
-    if os.path.exists(udf_file):
-        env_cfg.scene.terrain.obj_filepath = udf_file
+    usd_file = os.path.join(ASSETS_DIR, f"matterport_usd/{env_cfg.scene_id}/{env_cfg.scene_id}.usd")
+    if os.path.exists(usd_file):
+        env_cfg.scene.terrain.usd_path = usd_file
     else:
-        raise ValueError(f"No USD file found in scene directory: {udf_file}")  
+        raise ValueError(f"No USD file found in scene directory: {usd_file}")  
     # env_cfg.scene.terrain.obj_filepath = args_cli.usd_path
     # env_cfg.scene.lidar_sensor.mesh_prim_paths = [args_cli.ply_path]
     # env_cfg.scene.robot.init_state.pos = robot_init_pos
